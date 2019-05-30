@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "IotHubs_IoTHubLASV_name": {
+      "value": "IoTHubLASV2"
+    },
+    "consumerGroupName": {
+      "value": "consumers"
+    },
+    "virtualMachines_EdgeVM1_name": {
+      "value": "EdgeVM1"
+    },
+    "virtualMachines_EdgeVM2_name": {
+      "value": "EdgeVM2"
+    },
+    "virtualNetworks_EdgeVM1VNET_name": {
+      "value": "EdgeVM1VNET"
+    },
+    "networkInterfaces_EdgeVM1VMNic_name": {
+      "value": "EdgeVM1VMNic"
+    },
+    "networkInterfaces_EdgeVM2VMNic_name": {
+      "value": "EdgeVM2VMNic"
+    },
+    "registries_iotedgecr4_name": {
+      "value": "iotedgecr5"
+    },
+    "streamingjobs_IoTEdgeSA_name": {
+      "value": "IoTEdgeSA"
+    },
+    "networkSecurityGroups_EdgeVM1NSG_name": {
+      "value": "EdgeVM1NSG"
+    },
+    "networkSecurityGroups_EdgeVM2NSG_name": {
+      "value": "EdgeVM2NSG"
+    },
+    "publicIPAddresses_EdgeVM1PublicIP_name": {
+      "value": "EdgeVM1PublicIP"
+    },
+    "publicIPAddresses_EdgeVM2PublicIP_name": {
+      "value": "EdgeVM2PublicIP"
+    }
+  }
+}

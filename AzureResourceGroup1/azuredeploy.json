@@ -1,0 +1,889 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "IotHubs_IoTHubLASV_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "consumerGroupName": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "virtualMachines_EdgeVM1_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "virtualMachines_EdgeVM2_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "virtualNetworks_EdgeVM1VNET_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "networkInterfaces_EdgeVM1VMNic_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "networkInterfaces_EdgeVM2VMNic_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "registries_iotedgecr4_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "streamingjobs_IoTEdgeSA_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "networkSecurityGroups_EdgeVM1NSG_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "networkSecurityGroups_EdgeVM2NSG_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "publicIPAddresses_EdgeVM1PublicIP_name": {
+      "defaultValue": null,
+      "type": "String"
+    },
+    "publicIPAddresses_EdgeVM2PublicIP_name": {
+      "defaultValue": null,
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2017-10-01",
+      "name": "[parameters('registries_iotedgecr4_name')]",
+      "location": "westus2",
+      "sku": {
+        "name": "Basic",
+        "tier": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.Devices/IotHubs",
+      "apiVersion": "2018-04-01",
+      "name": "[parameters('IotHubs_IoTHubLASV_name')]",
+      "location": "westus2",
+      "sku": {
+        "name": "F1",
+        "tier": "Free",
+        "capacity": 1
+      },
+      "properties": {
+        "operationsMonitoringProperties": {
+          "events": {
+            "None": "None",
+            "Connections": "None",
+            "DeviceTelemetry": "None",
+            "C2DCommands": "None",
+            "DeviceIdentityOperations": "None",
+            "FileUploadOperations": "None",
+            "Routes": "None"
+          }
+        },
+        "ipFilterRules": [],
+        "eventHubEndpoints": {
+          "events": {
+            "retentionTimeInDays": 1,
+            "partitionCount": 2,
+            "partitionIds": [
+              "0",
+              "1"
+            ],
+            "path": "iothub-ehub-iothublasv-1643705-35785056db",
+            "endpoint": "sb://ihsuprodmwhres002dednamespace.servicebus.windows.net/"
+          },
+          "operationsMonitoringEvents": {
+            "retentionTimeInDays": 1,
+            "partitionCount": 2,
+            "partitionIds": [
+              "0",
+              "1"
+            ],
+            "path": "iothub-ehub-iothublasv-1643705-ace538c8f1",
+            "endpoint": "sb://ihsuprodmwhres001dednamespace.servicebus.windows.net/"
+          }
+        },
+        "routing": {
+          "endpoints": {
+            "serviceBusQueues": [],
+            "serviceBusTopics": [],
+            "eventHubs": [],
+            "storageContainers": []
+          },
+          "routes": [],
+          "fallbackRoute": {
+            "name": "$fallback",
+            "source": "DeviceMessages",
+            "condition": "true",
+            "endpointNames": [
+              "events"
+            ],
+            "isEnabled": true
+          }
+        },
+        "storageEndpoints": {
+          "$default": {
+            "sasTtlAsIso8601": "PT1H",
+            "connectionString": "",
+            "containerName": ""
+          }
+        },
+        "messagingEndpoints": {
+          "fileNotifications": {
+            "lockDurationAsIso8601": "PT1M",
+            "ttlAsIso8601": "PT1H",
+            "maxDeliveryCount": 10
+          }
+        },
+        "enableFileUploadNotifications": false,
+        "cloudToDevice": {
+          "maxDeliveryCount": 10,
+          "defaultTtlAsIso8601": "PT1H",
+          "feedback": {
+            "lockDurationAsIso8601": "PT1M",
+            "ttlAsIso8601": "PT1H",
+            "maxDeliveryCount": 10
+          }
+        },
+        "features": "None"
+      }
+    },
+    {
+      "apiVersion": "2016-02-03",
+      "type": "Microsoft.Devices/IotHubs/eventhubEndpoints/ConsumerGroups",
+      "name": "[concat(parameters('IotHubs_IoTHubLASV_name'), '/events/consumers')]",
+      "dependsOn": [
+        "[concat('Microsoft.Devices/Iothubs/', parameters('IotHubs_IoTHubLASV_name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('networkSecurityGroups_EdgeVM1NSG_name')]",
+      "location": "westus2",
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "66465249-48ff-4027-8869-01974928370b",
+        "securityRules": [
+          {
+            "name": "default-allow-ssh",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ],
+        "defaultSecurityRules": [
+          {
+            "name": "AllowVnetInBound",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow inbound traffic from all VMs in VNET",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 65000,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowAzureLoadBalancerInBound",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow inbound traffic from azure load balancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 65001,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "DenyAllInBound",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Deny all inbound traffic",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 65500,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowVnetOutBound",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow outbound traffic from all VMs to all VMs in VNET",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 65000,
+              "direction": "Outbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowInternetOutBound",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow outbound traffic from all VMs to Internet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet",
+              "access": "Allow",
+              "priority": 65001,
+              "direction": "Outbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "DenyAllOutBound",
+            "etag": "W/\"1d27e73c-b09b-4010-a4bb-84d615a7e066\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Deny all outbound traffic",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 65500,
+              "direction": "Outbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('networkSecurityGroups_EdgeVM2NSG_name')]",
+      "location": "westus2",
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "7d3e61c9-7a54-4749-9743-a2b9afe0b401",
+        "securityRules": [
+          {
+            "name": "default-allow-ssh",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ],
+        "defaultSecurityRules": [
+          {
+            "name": "AllowVnetInBound",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow inbound traffic from all VMs in VNET",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 65000,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowAzureLoadBalancerInBound",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow inbound traffic from azure load balancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 65001,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "DenyAllInBound",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Deny all inbound traffic",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 65500,
+              "direction": "Inbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowVnetOutBound",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow outbound traffic from all VMs to all VMs in VNET",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 65000,
+              "direction": "Outbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "AllowInternetOutBound",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Allow outbound traffic from all VMs to Internet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet",
+              "access": "Allow",
+              "priority": 65001,
+              "direction": "Outbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          },
+          {
+            "name": "DenyAllOutBound",
+            "etag": "W/\"395d2514-7b49-48cd-a0c2-9fe25376ee39\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "description": "Deny all outbound traffic",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 65500,
+              "direction": "Outbound",
+              "sourcePortRanges": [],
+              "destinationPortRanges": [],
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('publicIPAddresses_EdgeVM1PublicIP_name')]",
+      "location": "westus2",
+      "sku": {
+        "name": "Basic",
+        "tier": "Regional"
+      },
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "dff48a56-a215-4c6a-b161-3a981f6cb357",
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Dynamic",
+        "idleTimeoutInMinutes": 4,
+        "ipTags": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('publicIPAddresses_EdgeVM2PublicIP_name')]",
+      "location": "westus2",
+      "sku": {
+        "name": "Basic",
+        "tier": "Regional"
+      },
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "048ef631-4b1e-4e7a-911a-0358923aedc2",
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Dynamic",
+        "idleTimeoutInMinutes": 4,
+        "ipTags": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('virtualNetworks_EdgeVM1VNET_name')]",
+      "location": "westus2",
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "c02ec384-e5b9-42f5-a3de-82da761db1d8",
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "EdgeVM1Subnet",
+            "etag": "W/\"760747bf-1833-4c59-8656-3cbef5ea23f6\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "addressPrefix": "10.0.0.0/24",
+              "delegations": []
+            }
+          }
+        ],
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false,
+        "enableVmProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.StreamAnalytics/streamingjobs",
+      "apiVersion": "2016-03-01",
+      "name": "[parameters('streamingjobs_IoTEdgeSA_name')]",
+      "location": "West US 2",
+      "properties": {
+        "sku": {
+          "name": "Standard"
+        },
+        "eventsOutOfOrderPolicy": "Adjust",
+        "outputErrorPolicy": "Stop",
+        "eventsOutOfOrderMaxDelayInSeconds": 0,
+        "eventsLateArrivalMaxDelayInSeconds": 5,
+        "dataLocale": "en-US",
+        "compatibilityLevel": "1.0"
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-10-01",
+      "name": "[parameters('virtualMachines_EdgeVM1_name')]",
+      "location": "westus2",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_EdgeVM1VMNic_name'))]"
+      ],
+      "plan": {
+        "name": "ubuntu_1604_edgeruntimeonly",
+        "product": "iot_edge_vm_ubuntu",
+        "publisher": "microsoft_iot_edge"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1_v2"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "microsoft_iot_edge",
+            "offer": "iot_edge_vm_ubuntu",
+            "sku": "ubuntu_1604_edgeruntimeonly",
+            "version": "latest"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('virtualMachines_EdgeVM1_name'), '_OsDisk_1_6b0e2c8eed5f4493af9826764d0a1da9')]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Standard_LRS"
+            }
+          },
+          "dataDisks": []
+        },
+        "osProfile": {
+          "computerName": "[parameters('virtualMachines_EdgeVM1_name')]",
+          "adminUsername": "azureuser",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/azureuser/.ssh/authorized_keys",
+                  "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHdLp7ggH/cKL9O8MM88qamLL83+NUsaFIAiGWx89nkA8mkzmxRr0A3gbet/JcE9mxxuIoVoTblQambsHfA9I2EBZ+tI8J5mOLvJIILzanlA/fsDSroG4Sbx64G1YFPebtu1SjUvNW9tYjEjTh5V+Xb7WSVkn9qlNHqaH67bqVdLbrH3jGhP2sfzuYYpV0souBuBz72BvDkSau2Rwsr4qcNlYuJT+Dnwz62o2nD4rzA72qWHjBcgSv/XqsJ17PfrfWlMeaVcmMuLN7Hy7qdnjfCszMaRqyIqkSZoDz9077mSD8rreMWLp0zqYNNCCTarkhG4l1LgdAlNdmjTlylFV3"
+                }
+              ]
+            },
+            "provisionVMAgent": true
+          },
+          "secrets": [],
+          "allowExtensionOperations": true
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_EdgeVM1VMNic_name'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-10-01",
+      "name": "[parameters('virtualMachines_EdgeVM2_name')]",
+      "location": "westus2",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_EdgeVM2VMNic_name'))]"
+      ],
+      "plan": {
+        "name": "ubuntu_1604_edgeruntimeonly",
+        "product": "iot_edge_vm_ubuntu",
+        "publisher": "microsoft_iot_edge"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1_v2"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "microsoft_iot_edge",
+            "offer": "iot_edge_vm_ubuntu",
+            "sku": "ubuntu_1604_edgeruntimeonly",
+            "version": "latest"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('virtualMachines_EdgeVM2_name'), '_OsDisk_1_c2b6de72db5f42a49fb0d1b79d8fb27e')]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Standard_LRS"
+            }
+          },
+          "dataDisks": []
+        },
+        "osProfile": {
+          "computerName": "[parameters('virtualMachines_EdgeVM2_name')]",
+          "adminUsername": "azureuser",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/azureuser/.ssh/authorized_keys",
+                  "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHdLp7ggH/cKL9O8MM88qamLL83+NUsaFIAiGWx89nkA8mkzmxRr0A3gbet/JcE9mxxuIoVoTblQambsHfA9I2EBZ+tI8J5mOLvJIILzanlA/fsDSroG4Sbx64G1YFPebtu1SjUvNW9tYjEjTh5V+Xb7WSVkn9qlNHqaH67bqVdLbrH3jGhP2sfzuYYpV0souBuBz72BvDkSau2Rwsr4qcNlYuJT+Dnwz62o2nD4rzA72qWHjBcgSv/XqsJ17PfrfWlMeaVcmMuLN7Hy7qdnjfCszMaRqyIqkSZoDz9077mSD8rreMWLp0zqYNNCCTarkhG4l1LgdAlNdmjTlylFV3"
+                }
+              ]
+            },
+            "provisionVMAgent": true
+          },
+          "secrets": [],
+          "allowExtensionOperations": true
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_EdgeVM2VMNic_name'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2018-12-01",
+      "name": "[concat(parameters('networkSecurityGroups_EdgeVM1NSG_name'), '/default-allow-ssh')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_EdgeVM1NSG_name'))]"
+      ],
+      "properties": {
+        "provisioningState": "Succeeded",
+        "protocol": "Tcp",
+        "sourcePortRange": "*",
+        "destinationPortRange": "22",
+        "sourceAddressPrefix": "*",
+        "destinationAddressPrefix": "*",
+        "access": "Allow",
+        "priority": 1000,
+        "direction": "Inbound",
+        "sourcePortRanges": [],
+        "destinationPortRanges": [],
+        "sourceAddressPrefixes": [],
+        "destinationAddressPrefixes": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+      "apiVersion": "2018-12-01",
+      "name": "[concat(parameters('networkSecurityGroups_EdgeVM2NSG_name'), '/default-allow-ssh')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_EdgeVM2NSG_name'))]"
+      ],
+      "properties": {
+        "provisioningState": "Succeeded",
+        "protocol": "Tcp",
+        "sourcePortRange": "*",
+        "destinationPortRange": "22",
+        "sourceAddressPrefix": "*",
+        "destinationAddressPrefix": "*",
+        "access": "Allow",
+        "priority": 1000,
+        "direction": "Inbound",
+        "sourcePortRanges": [],
+        "destinationPortRanges": [],
+        "sourceAddressPrefixes": [],
+        "destinationAddressPrefixes": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2018-12-01",
+      "name": "[concat(parameters('virtualNetworks_EdgeVM1VNET_name'), '/EdgeVM1Subnet')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_EdgeVM1VNET_name'))]"
+      ],
+      "properties": {
+        "provisioningState": "Succeeded",
+        "addressPrefix": "10.0.0.0/24",
+        "delegations": []
+      }
+    },
+    {
+      "type": "Microsoft.StreamAnalytics/streamingjobs/inputs",
+      "apiVersion": "2016-03-01",
+      "name": "[concat(parameters('streamingjobs_IoTEdgeSA_name'), '/input')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.StreamAnalytics/streamingjobs', parameters('streamingjobs_IoTEdgeSA_name'))]"
+      ],
+      "properties": {
+        "type": "Stream",
+        "datasource": {
+          "type": "Microsoft.Devices/IotHubs",
+          "properties": {
+            "iotHubNamespace": "IoTHubLASV2",
+            "sharedAccessPolicyName": "iothubowner",
+            "sharedAccessPolicyKey": "[listKeys(resourceId('Microsoft.Devices/IotHubs/Iothubkeys', parameters('IotHubs_IoTHubLASV_name'), 'iothubowner'), '2018-04-01').primaryKey]",
+            "endpoint": "messages/events",
+            "consumerGroupName": "consumers"
+          }
+        },
+        "compression": {
+          "type": "None"
+        },
+        "serialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        },
+        "etag": "55e397d6-6d83-4a00-a29d-0d9738fdadb5"
+      }
+    },
+    {
+      "type": "Microsoft.StreamAnalytics/streamingjobs/outputs",
+      "apiVersion": "2016-03-01",
+      "name": "[concat(parameters('streamingjobs_IoTEdgeSA_name'), '/output')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.StreamAnalytics/streamingjobs', parameters('streamingjobs_IoTEdgeSA_name'))]"
+      ],
+      "properties": {
+        "datasource": {
+          "type": "PowerBI",
+          "properties": {
+            "dataset": "data",
+            "table": "table",
+            "groupId": "",
+            "groupName": "Mi área de trabajo",
+            "refreshToken": "testToken",
+            "accessToken": null,
+            "tokenUserPrincipalName": "U58434@ust-global.com",
+            "tokenUserDisplayName": "LuisAlberto Sanchez"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('networkInterfaces_EdgeVM1VMNic_name')]",
+      "location": "westus2",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_EdgeVM1PublicIP_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_EdgeVM1VNET_name'), 'EdgeVM1Subnet')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_EdgeVM1NSG_name'))]"
+      ],
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "41800c30-d01b-449d-9fff-7f41a6412a12",
+        "ipConfigurations": [
+          {
+            "name": "ipconfigEdgeVM1",
+            "etag": "W/\"63f10d17-8c4a-4b9c-a7c1-471c1fa5a55c\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "privateIPAddress": "10.0.0.4",
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_EdgeVM1PublicIP_name'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_EdgeVM1VNET_name'), 'EdgeVM1Subnet')]"
+              },
+              "primary": true,
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": [],
+          "appliedDnsServers": []
+        },
+        "macAddress": "00-0D-3A-6C-EF-CC",
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_EdgeVM1NSG_name'))]"
+        },
+        "primary": true,
+        "tapConfigurations": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2018-12-01",
+      "name": "[parameters('networkInterfaces_EdgeVM2VMNic_name')]",
+      "location": "westus2",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_EdgeVM2PublicIP_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_EdgeVM1VNET_name'), 'EdgeVM1Subnet')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_EdgeVM2NSG_name'))]"
+      ],
+      "properties": {
+        "provisioningState": "Succeeded",
+        "resourceGuid": "aca602da-14d3-4df4-b87e-f9ace22d99be",
+        "ipConfigurations": [
+          {
+            "name": "ipconfigEdgeVM2",
+            "etag": "W/\"abb1c675-023e-47b4-8808-55c0052ddbb6\"",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "privateIPAddress": "10.0.0.5",
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_EdgeVM2PublicIP_name'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworks_EdgeVM1VNET_name'), 'EdgeVM1Subnet')]"
+              },
+              "primary": true,
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": [],
+          "appliedDnsServers": []
+        },
+        "macAddress": "00-0D-3A-6C-CA-6E",
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_EdgeVM2NSG_name'))]"
+        },
+        "primary": true,
+        "tapConfigurations": []
+      }
+    }
+  ]
+}

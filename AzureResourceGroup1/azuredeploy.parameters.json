@@ -40,6 +40,12 @@
     },
     "publicIPAddresses_EdgeVM2PublicIP_name": {
       "value": "EdgeVM2PublicIP"
+    },
+    "AppServicePlan_name": {
+      "value": "AppServicePlan2"
+    },
+    "testvisualapp_name": {
+      "value":  "testvisualapp"
     }
   }
 }
